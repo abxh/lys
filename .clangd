@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-Wno-implicit-function-declaration, -ferror-limit=0]

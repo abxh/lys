@@ -1,6 +1,10 @@
 #ifndef LIBLYS_HEADER
 #define LIBLYS_HEADER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -8,9 +12,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#ifdef PROGHEADER
 #include PROGHEADER
+#endif
 
-#include "shared.h"
+#include "../shared.h"
 
 enum lys_event {
   LYS_LOOP_START,
@@ -58,6 +64,10 @@ void lys_run_sdl(struct lys_context *ctx);
 #ifdef LYS_TTF
 void draw_text(struct lys_context *ctx, TTF_Font *font, int font_size, char* buffer, int32_t colour,
                int x_start, int y_start);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

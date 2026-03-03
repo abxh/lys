@@ -55,4 +55,4 @@ else
 $(error Unknown LYS_BACKEND: $(LYS_BACKEND).  Must be 'opencl', 'cuda', 'hip', 'multicore', or 'c')
 endif
 
-LDFLAGS?=-lm $(PKG_LDFLAGS) $(DEVICE_LDFLAGS)
+LDFLAGS+=-lm $(PKG_LDFLAGS) $(DEVICE_LDFLAGS)

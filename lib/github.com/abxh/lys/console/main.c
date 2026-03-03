@@ -1,5 +1,9 @@
 #include "liblys.h"
-#include PRINTFHEADER
+
+#ifndef PROGHEADER
+#error "undefined PROGHEADER"
+unsigned char font_data[] = {0};
+#endif
 
 #include <unistd.h>
 #include <getopt.h>
@@ -18,7 +22,7 @@ void loop_iteration(struct lys_context *ctx, struct lys_text *text) {
     return;
   }
 
-  build_text(ctx, text->text_buffer, text->text_buffer_len, text->text_format,
+  build_text(ctx->fut, ctx->state, text->text_buffer, text->text_buffer_len, text->text_format,
              ctx->fps, text->sum_names);
   if (*(text->text_buffer) != '\0') {
     int32_t text_colour;
@@ -161,7 +165,7 @@ int main(int argc, char** argv) {
   lys_setup(&ctx, max_fps, num_frames, output, width, height);
 
   char* opencl_device_name = NULL;
-  lys_setup_futhark_context(argv[0],
+  lys_setup_futhark_context(get_cache_path(argv[0]),
                             deviceopt, device_interactive,
                             &futcfg, &ctx.fut, &opencl_device_name);
   if (opencl_device_name != NULL) {

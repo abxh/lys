@@ -4,7 +4,6 @@ pkgs: with pkgs; [
   opencl-headers
   SDL2
   SDL2_ttf
-  xxd
   python3
   gcc
 ]

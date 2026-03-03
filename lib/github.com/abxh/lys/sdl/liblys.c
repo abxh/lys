@@ -5,12 +5,19 @@
 
 #include "liblys.h"
 
+#ifndef PROGHEADER
+#define LYS_TTF
+#endif
 
-static void trigger_event(struct lys_context *ctx, enum lys_event event) {
+static void
+trigger_event(struct lys_context* ctx, enum lys_event event)
+{
   ctx->event_handler(ctx, event);
 }
 
-static void window_size_updated(struct lys_context *ctx, int newx, int newy) {
+static void
+window_size_updated(struct lys_context* ctx, int newx, int newy)
+{
   // https://stackoverflow.com/a/40122002
   ctx->wnd_surface = SDL_GetWindowSurface(ctx->wnd);
   SDL_ASSERT(ctx->wnd_surface != NULL);
@@ -18,8 +25,10 @@ static void window_size_updated(struct lys_context *ctx, int newx, int newy) {
   ctx->width = newx;
   ctx->height = newy;
 
-  struct futhark_opaque_state *new_state;
-  FUT_CHECK(ctx->fut, futhark_entry_resize(ctx->fut, &new_state, ctx->height, ctx->width, ctx->state));
+  struct futhark_opaque_state* new_state;
+  FUT_CHECK(ctx->fut,
+            futhark_entry_resize(
+              ctx->fut, &new_state, ctx->height, ctx->width, ctx->state));
   futhark_free_opaque_state(ctx->fut, ctx->state);
   ctx->state = new_state;
 
@@ -35,14 +44,23 @@ static void window_size_updated(struct lys_context *ctx, int newx, int newy) {
   if (ctx->surface != NULL) {
     SDL_FreeSurface(ctx->surface);
   }
-  ctx->surface = SDL_CreateRGBSurfaceFrom(ctx->data, ctx->width, ctx->height,
-                                          32, ctx->width * sizeof(uint32_t), 0xFF0000, 0xFF00, 0xFF, 0x00000000);
+  ctx->surface = SDL_CreateRGBSurfaceFrom(ctx->data,
+                                          ctx->width,
+                                          ctx->height,
+                                          32,
+                                          ctx->width * sizeof(uint32_t),
+                                          0xFF0000,
+                                          0xFF00,
+                                          0xFF,
+                                          0x00000000);
   SDL_ASSERT(ctx->surface != NULL);
 
   trigger_event(ctx, LYS_WINDOW_SIZE_UPDATED);
 }
 
-static void mouse_event(struct lys_context *ctx, Uint32 state, int x, int y) {
+static void
+mouse_event(struct lys_context* ctx, Uint32 state, int x, int y)
+{
   // We ignore mouse events if we are running a program that would
   // like mouse grab, but where we have temporarily taken the mouse
   // back from it (to e.g. resize the window).
@@ -50,33 +68,38 @@ static void mouse_event(struct lys_context *ctx, Uint32 state, int x, int y) {
     return;
   }
 
-  struct futhark_opaque_state *new_state;
-  FUT_CHECK(ctx->fut, futhark_entry_mouse(ctx->fut, &new_state, state, x, y, ctx->state));
+  struct futhark_opaque_state* new_state;
+  FUT_CHECK(ctx->fut,
+            futhark_entry_mouse(ctx->fut, &new_state, state, x, y, ctx->state));
   futhark_free_opaque_state(ctx->fut, ctx->state);
   ctx->state = new_state;
 }
 
-static void wheel_event(struct lys_context *ctx, int x, int y) {
-  struct futhark_opaque_state *new_state;
-  FUT_CHECK(ctx->fut, futhark_entry_wheel(ctx->fut, &new_state, x, y, ctx->state));
+static void
+wheel_event(struct lys_context* ctx, int x, int y)
+{
+  struct futhark_opaque_state* new_state;
+  FUT_CHECK(ctx->fut,
+            futhark_entry_wheel(ctx->fut, &new_state, x, y, ctx->state));
   futhark_free_opaque_state(ctx->fut, ctx->state);
   ctx->state = new_state;
 }
 
-static void handle_sdl_events(struct lys_context *ctx) {
+static void
+handle_sdl_events(struct lys_context* ctx)
+{
   SDL_Event event;
 
   while (SDL_PollEvent(&event) == 1) {
     switch (event.type) {
     case SDL_WINDOWEVENT:
       switch (event.window.event) {
-      case SDL_WINDOWEVENT_RESIZED:
-        {
-          int newx = (int)event.window.data1;
-          int newy = (int)event.window.data2;
-          window_size_updated(ctx, newx, newy);
-          break;
-        }
+      case SDL_WINDOWEVENT_RESIZED: {
+        int newx = (int)event.window.data1;
+        int newy = (int)event.window.data2;
+        window_size_updated(ctx, newx, newy);
+        break;
+      }
       }
       break;
     case SDL_QUIT:
@@ -84,7 +107,8 @@ static void handle_sdl_events(struct lys_context *ctx) {
       break;
     case SDL_MOUSEMOTION:
       if (ctx->grab_mouse) {
-        mouse_event(ctx, event.motion.state, event.motion.xrel, event.motion.yrel);
+        mouse_event(
+          ctx, event.motion.state, event.motion.xrel, event.motion.yrel);
       } else {
         mouse_event(ctx, event.motion.state, event.motion.x, event.motion.y);
       }
@@ -97,9 +121,13 @@ static void handle_sdl_events(struct lys_context *ctx) {
       }
 
       if (ctx->grab_mouse) {
-        mouse_event(ctx, 1<<(event.button.button-1), event.motion.xrel, event.motion.yrel);
+        mouse_event(ctx,
+                    1 << (event.button.button - 1),
+                    event.motion.xrel,
+                    event.motion.yrel);
       } else {
-        mouse_event(ctx, 1<<(event.button.button-1), event.motion.x, event.motion.y);
+        mouse_event(
+          ctx, 1 << (event.button.button - 1), event.motion.x, event.motion.y);
       }
       break;
     case SDL_MOUSEWHEEL:
@@ -121,30 +149,33 @@ static void handle_sdl_events(struct lys_context *ctx) {
           trigger_event(ctx, LYS_F1);
         }
         break;
-      default:
-        {
-          struct futhark_opaque_state *new_state;
-          int e = event.key.type == SDL_KEYDOWN ? 0 : 1;
-          FUT_CHECK(ctx->fut, futhark_entry_key(ctx->fut, &new_state,
-                                                e, event.key.keysym.sym, ctx->state));
-          futhark_free_opaque_state(ctx->fut, ctx->state);
-          ctx->state = new_state;
-        }
+      default: {
+        struct futhark_opaque_state* new_state;
+        int e = event.key.type == SDL_KEYDOWN ? 0 : 1;
+        FUT_CHECK(ctx->fut,
+                  futhark_entry_key(
+                    ctx->fut, &new_state, e, event.key.keysym.sym, ctx->state));
+        futhark_free_opaque_state(ctx->fut, ctx->state);
+        ctx->state = new_state;
+      }
       }
     }
   }
 }
 
-static void sdl_loop(struct lys_context *ctx) {
-  struct futhark_u32_2d *out_arr;
+static void
+sdl_loop(struct lys_context* ctx)
+{
+  struct futhark_u32_2d* out_arr;
 
   while (ctx->running) {
     int64_t now = lys_wall_time();
-    float delta = ((float)(now - ctx->last_time))/1000000.0;
-    ctx->fps = (ctx->fps*0.9 + (1/delta)*0.1);
+    float delta = ((float)(now - ctx->last_time)) / 1000000.0;
+    ctx->fps = (ctx->fps * 0.9 + (1 / delta) * 0.1);
     ctx->last_time = now;
     struct futhark_opaque_state *new_state, *old_state = ctx->state;
-    FUT_CHECK(ctx->fut, futhark_entry_step(ctx->fut, &new_state, delta, old_state));
+    FUT_CHECK(ctx->fut,
+              futhark_entry_step(ctx->fut, &new_state, delta, old_state));
     ctx->state = new_state;
 
     FUT_CHECK(ctx->fut, futhark_entry_render(ctx->fut, &out_arr, ctx->state));
@@ -153,13 +184,14 @@ static void sdl_loop(struct lys_context *ctx) {
     FUT_CHECK(ctx->fut, futhark_free_u32_2d(ctx->fut, out_arr));
     FUT_CHECK(ctx->fut, futhark_free_opaque_state(ctx->fut, old_state));
 
-    SDL_ASSERT(SDL_BlitSurface(ctx->surface, NULL, ctx->wnd_surface, NULL)==0);
+    SDL_ASSERT(SDL_BlitSurface(ctx->surface, NULL, ctx->wnd_surface, NULL) ==
+               0);
 
     trigger_event(ctx, LYS_LOOP_ITERATION);
 
     SDL_ASSERT(SDL_UpdateWindowSurface(ctx->wnd) == 0);
 
-    int delay =  1000.0/ctx->max_fps - delta*1000.0;
+    int delay = 1000.0 / ctx->max_fps - delta * 1000.0;
     if (delay > 0) {
       SDL_Delay(delay);
     }
@@ -168,18 +200,20 @@ static void sdl_loop(struct lys_context *ctx) {
   }
 }
 
-void lys_run_sdl(struct lys_context *ctx) {
-  struct futhark_context *fut = ctx->fut;
+void
+lys_run_sdl(struct lys_context* ctx)
+{
+  struct futhark_context* fut = ctx->fut;
 
   ctx->last_time = lys_wall_time();
 
-  ctx->wnd =
-    SDL_CreateWindow("Lys",
-                     SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                     ctx->width, ctx->height,
-                     ctx->sdl_flags |
-                     SDL_RENDERER_ACCELERATED |
-                     SDL_RENDERER_PRESENTVSYNC);
+  ctx->wnd = SDL_CreateWindow("Lys",
+                              SDL_WINDOWPOS_UNDEFINED,
+                              SDL_WINDOWPOS_UNDEFINED,
+                              ctx->width,
+                              ctx->height,
+                              ctx->sdl_flags | SDL_RENDERER_ACCELERATED |
+                                SDL_RENDERER_PRESENTVSYNC);
   SDL_ASSERT(ctx->wnd != NULL);
 
   window_size_updated(ctx, ctx->width, ctx->height);
@@ -206,7 +240,13 @@ void lys_run_sdl(struct lys_context *ctx) {
   SDL_Quit();
 }
 
-void lys_setup(struct lys_context *ctx, int width, int height, int max_fps, int sdl_flags) {
+void
+lys_setup(struct lys_context* ctx,
+          int width,
+          int height,
+          int max_fps,
+          int sdl_flags)
+{
   memset(ctx, 0, sizeof(struct lys_context));
   ctx->width = width;
   ctx->height = height;
@@ -218,18 +258,22 @@ void lys_setup(struct lys_context *ctx, int width, int height, int max_fps, int 
 }
 
 #ifdef LYS_TTF
-void draw_text(struct lys_context *ctx,
-               TTF_Font *font, int font_size,
-               char* buffer, int32_t colour,
-               int y_start, int x_start) {
-  SDL_Surface *text_surface;
+void
+draw_text(struct lys_context* ctx,
+          TTF_Font* font,
+          int font_size,
+          char* buffer,
+          int32_t colour,
+          int y_start,
+          int x_start)
+{
+  SDL_Surface* text_surface;
   SDL_Rect offset_rect;
 
-  SDL_Color sdl_colour =
-      { .a = (colour >> 24) & 0xff,
-        .r = (colour >> 16) & 0xff,
-        .g = (colour >> 8) & 0xff,
-        .b = colour & 0xff };
+  SDL_Color sdl_colour = { .a = (colour >> 24) & 0xff,
+                           .r = (colour >> 16) & 0xff,
+                           .g = (colour >> 8) & 0xff,
+                           .b = colour & 0xff };
 
   offset_rect.x = x_start;
   int y = y_start;
@@ -254,8 +298,8 @@ void draw_text(struct lys_context *ctx,
       offset_rect.y = y;
       offset_rect.w = text_surface->w;
       offset_rect.h = text_surface->h;
-      SDL_ASSERT(SDL_BlitSurface(text_surface, NULL,
-                                 ctx->wnd_surface, &offset_rect) == 0);
+      SDL_ASSERT(SDL_BlitSurface(
+                   text_surface, NULL, ctx->wnd_surface, &offset_rect) == 0);
       SDL_FreeSurface(text_surface);
     }
 

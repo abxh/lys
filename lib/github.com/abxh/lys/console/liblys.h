@@ -1,15 +1,20 @@
 #ifndef LIBLYS_HEADER
 #define LIBLYS_HEADER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
 #include <termios.h>
 
+#ifdef PROGHEADER
 #include PROGHEADER
-
-#include "shared.h"
+#endif
 
 enum lys_event {
   LYS_LOOP_START,
@@ -49,4 +54,10 @@ void lys_run_console(struct lys_context *ctx);
 void draw_text(struct lys_context *ctx, char* buffer, int32_t colour,
                int x_start, int y_start);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif
+
+#include "../shared.h"
