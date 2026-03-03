@@ -16,6 +16,8 @@ extern "C" {
 #include PROGHEADER
 #endif
 
+#include "../shared.h"
+
 enum lys_event {
   LYS_LOOP_START,
   LYS_LOOP_ITERATION,
@@ -59,5 +61,3 @@ void draw_text(struct lys_context *ctx, char* buffer, int32_t colour,
 #endif
 
 #endif
-
-#include "../shared.h"
