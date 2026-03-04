@@ -7,16 +7,19 @@
 
 #include "shared.h"
 
-void
-lys_setup_futhark_context(const char* cache_path,
-                          const char* deviceopt,
-                          _Bool device_interactive,
-                          struct futhark_context_config** futcfg,
-                          struct futhark_context** futctx,
-                          char** opencl_device_name)
-{
-  *futcfg =
-    (struct futhark_context_config*)(uintptr_t)futhark_context_config_new();
+#ifndef PROGNAME
+struct futhark_context_config *futhark_context_config_new();
+struct futhark_context *futhark_context_new(struct futhark_context_config *);
+struct futhark_u8_1d;
+const int64_t *futhark_shape_u8_1d(struct futhark_context *, struct futhark_u8_1d *);
+#endif
+
+void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
+                               _Bool device_interactive,
+                               struct futhark_context_config **futcfg,
+                               struct futhark_context **futctx,
+                               char **opencl_device_name) {
+  *futcfg = futhark_context_config_new();
   assert(*futcfg != NULL);
 
 #if defined(FUTHARK_BACKEND_opencl) || defined(FUTHARK_BACKEND_cuda)
@@ -39,54 +42,47 @@ lys_setup_futhark_context(const char* cache_path,
     futhark_context_config_set_cache_file(*futcfg, cache_path);
   }
 
-  *futctx = (struct futhark_context*)(uintptr_t)futhark_context_new(*futcfg);
+  *futctx = futhark_context_new(*futcfg);
   assert(*futctx != NULL);
 
 #ifdef FUTHARK_BACKEND_opencl
   cl_device_id device;
   assert(clGetCommandQueueInfo(futhark_context_get_command_queue(*futctx),
-                               CL_QUEUE_DEVICE,
-                               sizeof(cl_device_id),
-                               &device,
+                               CL_QUEUE_DEVICE, sizeof(cl_device_id), &device,
                                NULL) == CL_SUCCESS);
 
   size_t dev_name_size;
   assert(clGetDeviceInfo(device, CL_DEVICE_NAME, 0, NULL, &dev_name_size) ==
          CL_SUCCESS);
   *opencl_device_name = malloc(dev_name_size);
-  assert(clGetDeviceInfo(
-           device, CL_DEVICE_NAME, dev_name_size, *opencl_device_name, NULL) ==
-         CL_SUCCESS);
+  assert(clGetDeviceInfo(device, CL_DEVICE_NAME, dev_name_size,
+                         *opencl_device_name, NULL) == CL_SUCCESS);
 #else
   *opencl_device_name = NULL;
 #endif
 }
 
-int64_t
-lys_wall_time()
-{
+int64_t lys_wall_time() {
   struct timeval time;
   assert(gettimeofday(&time, NULL) == 0);
   return time.tv_sec * 1000000 + time.tv_usec;
 }
 
-void
-prepare_text(struct futhark_context* futctx, struct lys_text* text)
-{
-  struct futhark_u8_1d* text_format_array;
+void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
+  struct futhark_u8_1d *text_format_array;
   FUT_CHECK(futctx, futhark_entry_text_format(futctx, &text_format_array));
-  size_t text_format_len =
-    ((int64_t*)(uintptr_t)futhark_shape_u8_1d(futctx, text_format_array))[0];
+  size_t text_format_len = futhark_shape_u8_1d(futctx, text_format_array)[0];
+
   text->text_format = malloc(sizeof(char) * (text_format_len + 1));
   assert(text->text_format != NULL);
-  FUT_CHECK(futctx,
-            futhark_values_u8_1d(
-              futctx, text_format_array, (unsigned char*)text->text_format));
+  FUT_CHECK(futctx, futhark_values_u8_1d(futctx, text_format_array,
+                                         (unsigned char *)text->text_format));
   FUT_CHECK(futctx, futhark_context_sync(futctx));
+
   text->text_format[text_format_len] = '\0';
   FUT_CHECK(futctx, futhark_free_u8_1d(futctx, text_format_array));
 
-  text->sum_names = (char***)malloc(sizeof(char**) * n_printf_arguments());
+  text->sum_names = (char ***)malloc(sizeof(char **) * n_printf_arguments());
   assert(text->sum_names != NULL);
 
   text->text_buffer_len = text_format_len;
@@ -110,11 +106,11 @@ prepare_text(struct futhark_context* futctx, struct lys_text* text)
         }
         assert(found_end);
         text->sum_names[i_arg] =
-          (char**)malloc(sizeof(char*) * (n_choices + 1));
+            (char **)malloc(sizeof(char *) * (n_choices + 1));
         assert(text->sum_names[i_arg] != NULL);
         text->sum_names[i_arg][n_choices] = NULL;
-        char* temp_choice =
-          (char*)malloc(sizeof(char) * (end_pos - i - n_choices));
+        char *temp_choice =
+            (char *)malloc(sizeof(char) * (end_pos - i - n_choices));
         assert(temp_choice != NULL);
         size_t choice_cur = 0;
         size_t i_choice = 0;
@@ -122,10 +118,10 @@ prepare_text(struct futhark_context* futctx, struct lys_text* text)
           if (text->text_format[j] == '|' || text->text_format[j] == ']') {
             temp_choice[choice_cur] = '\0';
             text->sum_names[i_arg][i_choice] =
-              (char*)malloc(sizeof(char) * (choice_cur + 1));
+                (char *)malloc(sizeof(char) * (choice_cur + 1));
             assert(text->sum_names[i_arg][i_choice] != NULL);
-            strncpy(
-              text->sum_names[i_arg][i_choice], temp_choice, choice_cur + 1);
+            strncpy(text->sum_names[i_arg][i_choice], temp_choice,
+                    choice_cur + 1);
             choice_cur = 0;
             i_choice++;
           } else {

@@ -5,7 +5,7 @@ BUILD_DIR := build
 
 CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic -fsanitize=undefined
 CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic -fsanitize=undefined
-LDFLAGS ?= -lstdc++ -fsanitize=undefined
+LDFLAGS ?= -fsanitize=undefined
 
 export CFLAGS CXXFLAGS LDFLAGS PROGNAME
 

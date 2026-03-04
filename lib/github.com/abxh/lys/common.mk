@@ -5,7 +5,7 @@ LYS_TTF ?= 1
 
 SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 include $(SELF_DIR)/common_setup_flags.mk
-FRONTEND_DIR := $(SELF_DIR)/$(LYS_FRONTEND)
+FRONTEND_DIR := $(SELF_DIR)/frontends/$(LYS_FRONTEND)
 
 ifeq ($(LYS_FRONTEND), sdl)
 FONT_DEPS := font_data.h
@@ -22,7 +22,7 @@ CFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
 LDFLAGS += -lstdc++
 
 C_SOURCE_FILES := $(FRONTEND_DIR)/liblys.c $(SELF_DIR)/shared.c $(FRONTEND_DIR)/main.c 
-C_HEADER_FILES := $(FRONTEND_DIR)/liblys.h $(SELF_DIR)/shared.h
+C_HEADER_FILES := $(FRONTEND_DIR)/liblys.h $(SELF_DIR)/shared.h $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.h
 
 all: $(PROGNAME)
 
@@ -42,7 +42,10 @@ font_data.h: $(SELF_DIR)/Inconsolata-Regular.ttf
 		print(",".join(f"0x{b:02x}" for b in data)); \
 		print("};")' $< > $@
 
-shared_cpp.o: $(SELF_DIR)/shared.cpp $(PROGNAME)_wrapper.h
+tiny_obj_loader.o: $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.cpp $(PROGNAME)_wrapper.h
+	$(CXX) -I. -I$(SELF_DIR) -c $< -o $@ $(CXXFLAGS)
+
+shared_cpp.o: $(SELF_DIR)/shared.cpp $(PROGNAME)_wrapper.h $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.h
 	$(CXX) -I. -I$(SELF_DIR) -c $< -o $@ $(CXXFLAGS)
 
 ifeq ($(shell test futhark.pkg -nt lib; echo $$?),0)
@@ -50,8 +53,9 @@ $(PROGNAME):
 	futhark pkg sync
 	@$(MAKE) # The sync might have resulted in a new Makefile.
 else
-$(PROGNAME): $(PROGNAME)_wrapper.o $(FONT_DEPS) shared_cpp.o $(C_SOURCE_FILES) $(C_HEADER_FILES)
-	$(CC) $(PROGNAME)_wrapper.o shared_cpp.o $(C_SOURCE_FILES) \
+$(PROGNAME): $(PROGNAME)_wrapper.o shared_cpp.o tiny_obj_loader.o $(FONT_DEPS) $(C_SOURCE_FILES) $(C_HEADER_FILES)
+	$(CC) $(PROGNAME)_wrapper.o shared_cpp.o tiny_obj_loader.o \
+		$(C_SOURCE_FILES) \
 		-I. -I$(SELF_DIR) -o $@ $(CFLAGS) $(LDFLAGS)
 endif
 

@@ -5,7 +5,7 @@
 #include "font_data.h"
 #else
 #error "undefined PROGHEADER"
-unsigned char font_data[] = { 0 };
+unsigned char font_data[] = {0};
 #endif
 
 #ifndef _XOPEN_SOURCE
@@ -19,41 +19,29 @@ unsigned char font_data[] = { 0 };
 
 bool show_text = true;
 
-void
-loop_start(struct lys_context* ctx, struct lys_text* text)
-{
+void loop_start(struct lys_context *ctx, struct lys_text *text) {
   prepare_text(ctx->fut, text);
   text->show_text = show_text;
 }
 
-void
-loop_iteration(struct lys_context* ctx, struct lys_text* text)
-{
+void loop_iteration(struct lys_context *ctx, struct lys_text *text) {
   if (!text->show_text) {
     return;
   }
 
-  build_text(ctx->fut,
-             ctx->state,
-             text->text_buffer,
-             text->text_buffer_len,
-             text->text_format,
-             ctx->fps,
-             text->sum_names);
+  build_text(ctx->fut, ctx->state, text->text_buffer, text->text_buffer_len,
+             text->text_format, ctx->fps, text->sum_names);
 
   if (*(text->text_buffer) != '\0') {
     int32_t text_colour;
-    FUT_CHECK(
-      ctx->fut,
-      futhark_entry_text_colour(ctx->fut, (uint32_t*)&text_colour, ctx->state));
-    draw_text(
-      ctx, ctx->font, ctx->font_size, text->text_buffer, text_colour, 10, 10);
+    FUT_CHECK(ctx->fut, futhark_entry_text_colour(
+                            ctx->fut, (uint32_t *)&text_colour, ctx->state));
+    draw_text(ctx, ctx->font, ctx->font_size, text->text_buffer, text_colour,
+              10, 10);
   }
 }
 
-void
-loop_end(struct lys_text* text)
-{
+void loop_end(struct lys_text *text) {
   free(text->text_format);
   free(text->text_buffer);
 
@@ -70,9 +58,7 @@ loop_end(struct lys_text* text)
   free(text->sum_names);
 }
 
-int
-font_size_from_dimensions(int width, int height)
-{
+int font_size_from_dimensions(int width, int height) {
   int size, font_size;
   if (height < width) {
     size = height;
@@ -88,32 +74,22 @@ font_size_from_dimensions(int width, int height)
   return font_size;
 }
 
-TTF_Font*
-open_font(int font_size)
-{
-  return TTF_OpenFontRW(
-    SDL_RWFromMem(font_data, sizeof(font_data)), true, font_size);
+TTF_Font *open_font(int font_size) {
+  return TTF_OpenFontRW(SDL_RWFromMem(font_data, sizeof(font_data)), true,
+                        font_size);
 }
 
-void
-window_size_updated(struct lys_context* ctx)
-{
+void window_size_updated(struct lys_context *ctx) {
   ctx->font_size = font_size_from_dimensions(ctx->width, ctx->height);
   TTF_CloseFont(ctx->font);
   ctx->font = open_font(ctx->font_size);
   SDL_ASSERT(ctx->font != NULL);
 }
 
-void
-f1(struct lys_text* text)
-{
-  text->show_text = !text->show_text;
-}
+void f1(struct lys_text *text) { text->show_text = !text->show_text; }
 
-void
-handle_event(struct lys_context* ctx, enum lys_event event)
-{
-  struct lys_text* text = (struct lys_text*)ctx->event_handler_data;
+void handle_event(struct lys_context *ctx, enum lys_event event) {
+  struct lys_text *text = (struct lys_text *)ctx->event_handler_data;
   switch (event) {
   case LYS_LOOP_START:
     loop_start(ctx, text);
@@ -132,18 +108,12 @@ handle_event(struct lys_context* ctx, enum lys_event event)
   }
 }
 
-void
-do_bench(struct futhark_context* fut,
-         int height,
-         int width,
-         int n,
-         const char* operation)
-{
-  struct futhark_opaque_state* state;
+void do_bench(struct futhark_context *fut, int height, int width, int n,
+              const char *operation) {
+  struct futhark_opaque_state *state;
   int64_t start, end;
-  FUT_CHECK(
-    fut,
-    futhark_entry_init(fut, &state, (int32_t)lys_wall_time(), height, width));
+  FUT_CHECK(fut, futhark_entry_init(fut, &state, (int32_t)lys_wall_time(),
+                                    height, width));
   futhark_context_sync(fut);
   bool do_step = false, do_render = false;
 
@@ -158,13 +128,13 @@ do_bench(struct futhark_context* fut,
   start = lys_wall_time();
   for (int i = 0; i < n; i++) {
     if (do_step) {
-      struct futhark_opaque_state* new_state;
+      struct futhark_opaque_state *new_state;
       FUT_CHECK(fut, futhark_entry_step(fut, &new_state, 1.0 / n, state));
       futhark_free_opaque_state(fut, state);
       state = new_state;
     }
     if (do_render) {
-      struct futhark_u32_2d* out_arr;
+      struct futhark_u32_2d *out_arr;
       FUT_CHECK(fut, futhark_entry_render(fut, &out_arr, state));
       FUT_CHECK(fut, futhark_free_u32_2d(fut, out_arr));
     }
@@ -172,17 +142,14 @@ do_bench(struct futhark_context* fut,
   futhark_context_sync(fut);
   end = lys_wall_time();
 
-  printf("Rendered %d frames in %fs (%f FPS)\n",
-         n,
+  printf("Rendered %d frames in %fs (%f FPS)\n", n,
          ((double)end - start) / 1000000,
          n / (((double)end - start) / 1000000));
 
   FUT_CHECK(fut, futhark_free_opaque_state(fut, state));
 }
 
-void
-usage(char** argv)
-{
+void usage(char **argv) {
   printf("Usage: %s options...\n", argv[0]);
   puts("Options:");
   puts("  -?      Print this help and exit.");
@@ -196,14 +163,12 @@ usage(char** argv)
   puts("  -b <render|step>  Benchmark program.");
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char **argv) {
   int width = INITIAL_WIDTH, height = INITIAL_HEIGHT, max_fps = 60;
   bool allow_resize = true;
-  char* deviceopt = NULL;
+  char *deviceopt = NULL;
   bool device_interactive = false;
-  char* benchopt = NULL;
+  char *benchopt = NULL;
 
   int c;
   while ((c = getopt(argc, argv, "w:h:r:Rtd:b:i")) != -1) {
@@ -273,15 +238,12 @@ main(int argc, char** argv)
   }
 
   struct lys_context ctx;
-  struct futhark_context_config* futcfg;
+  struct futhark_context_config *futcfg;
   lys_setup(&ctx, width, height, max_fps, sdl_flags);
 
-  char* opencl_device_name = NULL;
-  lys_setup_futhark_context(get_cache_path(argv[0]),
-                            deviceopt,
-                            device_interactive,
-                            &futcfg,
-                            &ctx.fut,
+  char *opencl_device_name = NULL;
+  lys_setup_futhark_context(get_cache_path(argv[0]), deviceopt,
+                            device_interactive, &futcfg, &ctx.fut,
                             &opencl_device_name);
   if (opencl_device_name != NULL) {
     printf("Using OpenCL device: %s\n", opencl_device_name);
@@ -292,7 +254,7 @@ main(int argc, char** argv)
   FUT_CHECK(ctx.fut, futhark_entry_grab_mouse(ctx.fut, &ctx.grab_mouse));
 
   struct lys_text text;
-  ctx.event_handler_data = (void*)&text;
+  ctx.event_handler_data = (void *)&text;
   ctx.event_handler = handle_event;
 
   SDL_ASSERT(TTF_Init() == 0);
@@ -306,7 +268,12 @@ main(int argc, char** argv)
   } else {
     int32_t seed = (int32_t)lys_wall_time();
     futhark_entry_init(ctx.fut, &ctx.state, seed, ctx.height, ctx.width);
-    lys_run_sdl(&ctx);
+    bool has_loaded_files = load_files(ctx.fut, &ctx.state);
+
+    if (has_loaded_files) {
+      lys_run_sdl(&ctx);
+    }
+
     free(ctx.data);
   }
 

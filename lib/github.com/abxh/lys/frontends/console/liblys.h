@@ -16,7 +16,7 @@ extern "C" {
 #include PROGHEADER
 #endif
 
-#include "../shared.h"
+#include "../../shared.h"
 
 enum lys_event {
   LYS_LOOP_START,

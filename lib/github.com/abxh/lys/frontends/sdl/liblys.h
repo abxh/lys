@@ -14,9 +14,12 @@ extern "C" {
 
 #ifdef PROGHEADER
 #include PROGHEADER
+#else
+struct futhark_context;
+struct futhark_opaque_state;
 #endif
 
-#include "../shared.h"
+#include "../../shared.h"
 
 enum lys_event {
   LYS_LOOP_START,
