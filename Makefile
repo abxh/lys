@@ -3,11 +3,18 @@
 PROGNAME := lys
 BUILD_DIR := build
 
-CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic -fsanitize=undefined
-CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic -fsanitize=undefined
-LDFLAGS ?= -fsanitize=undefined
+export PROGNAME
 
-export CFLAGS CXXFLAGS LDFLAGS PROGNAME
+CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic
+CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic
+
+# enable ubsan sanitizer. may comment below chunk out.
+CFLAGS += -fsanitize=undefined
+CXXFLAGS += -fsanitize=undefined
+LDFLAGS += -fsanitize=undefined
+
+export CFLAGS CXXFLAGS LDFLAGS
+
 
 all: run
 
@@ -23,7 +30,7 @@ clean:
 
 build/:
 	@mkdir -p $(BUILD_DIR)
-	@for f in *.fut; do \
-		ln -sf ../$$f $(BUILD_DIR)/$$f; \
+	@for f in *.fut *.bin *.obj; do \
+		ln -sf "../$$f" "$(BUILD_DIR)/$$f"; \
 	done
 	@ln -snf ../lib $(BUILD_DIR)/lib

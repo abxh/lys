@@ -53,15 +53,23 @@ module lys_file = {
     ++ "foo.bin,"
     ++ "banner.obj,"
 
-  def load_bin [n] (_: i64) (content: [n]u8) (s: lys_state) : lys_state =
-    let value = replicate (n) 0
-    let value' =
-      loop (value) for i < n - 1 do
-        value with [i + 1] = 10 * value[i] + i64.u8 (content[i] - '0')
-    in s with msg_val = value'[n - 1]
+  def load_bin [n] (i: i64) (content: [n]u8) (s: lys_state) : lys_state =
+    match i
+    case 0 ->
+      let value = replicate (n) 0
+      let value' =
+        loop (value) for i < n - 1 do
+          value with [i + 1] = 10 * value[i] + i64.u8 (content[i] - '0')
+      in s with msg_val = value'[n - 1]
+    case _ ->
+      s
 
-  def load_obj_vertices [n] (_: i64) (vs: [n](f32, f32, f32)) (s: lys_state) : lys_state =
-    s with triangles = vs
+  def load_obj_vertices [n] (i: i64) (vs: [n](f32, f32, f32)) (s: lys_state) : lys_state =
+    match i
+    case 1 ->
+      s with triangles = vs
+    case _ ->
+      s
 
   def load_obj_normals _ _ s = s
   def load_obj_texcoords _ _ s = s
@@ -167,7 +175,9 @@ module lys : lys with text_content = lys_text.text_content = {
                         let w1 = v1v2x * v1py - v1v2y * v1px
                         let w2 = v2v0x * v2py - v2v0y * v2px
                         let w3 = v0v1x * v0py - v0v1y * v0px
-                        in w1 >= 0 && w2 >= 0 && w3 >= 0 || w1 <= 0 && w2 <= 0 && w3 <= 0)
+                        let inside_cclockwise = w1 >= 0 && w2 >= 0 && w3 >= 0
+                        let inside_clockwise = w1 <= 0 && w2 <= 0 && w3 <= 0
+                        in inside_cclockwise || inside_clockwise)
               |> reduce (||) false
     in tabulate_2d s.h
                    s.w

@@ -35,6 +35,9 @@ all: $(PROGNAME)
 $(PROGNAME)_wrapper.o: $(PROGNAME)_wrapper.c $(PROGNAME)_wrapper.h
 	$(CC) -o $@ -c $< $(NOWARN_CFLAGS)
 
+# font generation snippet taken from commit:
+# https://github.com/dpaneda/lys/commit/f075c3e3c43e984a732beeb744faade68d0c8740
+
 font_data.h: $(SELF_DIR)/Inconsolata-Regular.ttf
 	python3 -c 'import sys; \
 		data = open(sys.argv[1], "rb").read(); \

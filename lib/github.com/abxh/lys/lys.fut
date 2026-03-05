@@ -99,8 +99,8 @@ module type lys = {
   val text_colour : state -> argb.colour
 
   -- | Load files after setting the initial state. Specify in a comma-seperated
-  -- string of file names to load: 'filename1.ex1,filename2.ex2,...'. The file
-  -- extension is used to determine how to parse the file. The position
+  -- string of file names to load: 'filename1.ex1,filename2.ex2,...filenameN.exN[,]'.
+  -- The file extension is used to determine how to parse the file. The position
   -- of the filename is passed as a parameter starting from zero.
   val input_file_names : () -> string []
   val load_bin [n] : i64 -> [n]u8 -> state -> state

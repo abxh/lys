@@ -295,8 +295,27 @@ static bool load_obj(struct futhark_context *futctx,
       std::cout << "TinyObjReader: " << reader.Warning();
     }
 
-    auto &attrib = reader.GetAttrib();
     auto &shapes = reader.GetShapes();
+    auto &attrib = reader.GetAttrib();
+
+    size_t total_vertices = 0;
+    for (const auto &shape : shapes) {
+      for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+        total_vertices += shape.mesh.num_face_vertices[f];
+        assert(shape.mesh.num_face_vertices[f] == 3 && "assuming only triangles are loaded");
+      }
+    }
+
+    vx.reserve(total_vertices);
+    vy.reserve(total_vertices);
+    vz.reserve(total_vertices);
+
+    nx.reserve(attrib.normals.size());
+    ny.reserve(attrib.normals.size());
+    nz.reserve(attrib.normals.size());
+
+    tu.reserve(attrib.texcoords.size());
+    tv.reserve(attrib.texcoords.size());
 
     for (size_t s = 0; s < shapes.size(); s++) {
       size_t index_offset = 0;
@@ -304,8 +323,6 @@ static bool load_obj(struct futhark_context *futctx,
         size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
 
         for (size_t v = 0; v < fv; v++) {
-          assert(fv == 3);
-
           tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
           if (idx.vertex_index >= 0) {
