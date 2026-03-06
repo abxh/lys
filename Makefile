@@ -15,6 +15,9 @@ LDFLAGS += -fsanitize=undefined
 
 export CFLAGS CXXFLAGS LDFLAGS
 
+LYS_BACKEND := opencl
+
+export LYS_BACKEND
 
 all: run
 
