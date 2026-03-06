@@ -21,7 +21,7 @@ export LYS_BACKEND
 
 all: run
 
-run: build/
+run: build
 	$(MAKE) \
 		-C $(BUILD_DIR) \
 		-f ../lib/github.com/abxh/lys/common.mk
@@ -31,7 +31,7 @@ clean:
 		-C $(BUILD_DIR) \
 		-f ../lib/github.com/abxh/lys/common.mk
 
-build/:
+build: build/
 	@mkdir -p $(BUILD_DIR)
 	@for f in *.fut *.bin *.obj; do \
 		ln -sf "../$$f" "$(BUILD_DIR)/$$f"; \
