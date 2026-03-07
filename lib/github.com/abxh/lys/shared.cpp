@@ -100,8 +100,8 @@ extern "C" const char *get_cache_path(const char *progname) {
     if (path_str.length() >= sizeof(cache_path_buffer)) {
       return nullptr;
     }
-    std::strncpy(cache_path_buffer, path_str.c_str(),
-                 sizeof(cache_path_buffer));
+    std::snprintf(cache_path_buffer, sizeof(cache_path_buffer), "%s",
+                  path_str.c_str());
 
     std::cout << "Using cache at: " << cache_path_buffer << "\n";
 
@@ -165,6 +165,15 @@ int futhark_entry_load_obj_texcoords(struct futhark_context *,
                                      const struct futhark_f32_1d *,
                                      const struct futhark_f32_1d *,
                                      const struct futhark_opaque_state *);
+
+int futhark_entry_load_obj_vertex_indices(struct futhark_context *,
+                                          struct futhark_opaque_state **,
+                                          const int64_t,
+                                          const struct futhark_i64_1d *,
+                                          const struct futhark_opaque_state *);
+struct futhark_i64_1d *futhark_new_i64_1d(struct futhark_context *,
+                                          const int64_t *, int64_t);
+int futhark_free_i64_1d(struct futhark_context *, struct futhark_i64_1d *);
 #endif
 
 static bool load_bin(struct futhark_context *futctx,
@@ -275,6 +284,7 @@ static bool load_bin(struct futhark_context *futctx,
 static bool load_obj(struct futhark_context *futctx,
                      struct futhark_opaque_state **futstate, std::int64_t index,
                      std::filesystem::path &path) {
+  std::vector<std::int64_t> vis;
   std::vector<float> vx, vy, vz;
   std::vector<float> nx, ny, nz;
   std::vector<float> tu, tv;
@@ -298,24 +308,38 @@ static bool load_obj(struct futhark_context *futctx,
     auto &shapes = reader.GetShapes();
     auto &attrib = reader.GetAttrib();
 
-    size_t total_vertices = 0;
-    for (const auto &shape : shapes) {
-      for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
-        total_vertices += shape.mesh.num_face_vertices[f];
-        assert(shape.mesh.num_face_vertices[f] == 3 && "assuming only triangles are loaded");
-      }
+    assert(attrib.vertices.size() % 3 == 0);
+    const size_t num_vertices = attrib.vertices.size() / 3;
+    vx.reserve(num_vertices);
+    vy.reserve(num_vertices);
+    vz.reserve(num_vertices);
+
+    for (size_t i = 0; i < num_vertices; i++) {
+      vx.push_back(attrib.vertices[3 * i + 0]);
+      vy.push_back(attrib.vertices[3 * i + 1]);
+      vz.push_back(attrib.vertices[3 * i + 2]);
     }
 
-    vx.reserve(total_vertices);
-    vy.reserve(total_vertices);
-    vz.reserve(total_vertices);
+    size_t total_vertex_indices = 0;
+    for (const auto &shape : shapes) {
+      for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+        total_vertex_indices += shape.mesh.num_face_vertices[f];
+        assert(shape.mesh.num_face_vertices[f] == 3 &&
+               "assuming only triangles are loaded");
+      }
+    }
+    vis.reserve(total_vertex_indices);
 
-    nx.reserve(attrib.normals.size());
-    ny.reserve(attrib.normals.size());
-    nz.reserve(attrib.normals.size());
+    assert(attrib.normals.size() % 3 == 0);
+    const size_t num_normals = attrib.normals.size() / 3;
+    nx.reserve(num_normals);
+    ny.reserve(num_normals);
+    nz.reserve(num_normals);
 
-    tu.reserve(attrib.texcoords.size());
-    tv.reserve(attrib.texcoords.size());
+    assert(attrib.texcoords.size() % 2 == 0);
+    const size_t num_texcoords = attrib.texcoords.size() / 2;
+    tu.reserve(num_texcoords);
+    tv.reserve(num_texcoords);
 
     for (size_t s = 0; s < shapes.size(); s++) {
       size_t index_offset = 0;
@@ -325,11 +349,9 @@ static bool load_obj(struct futhark_context *futctx,
         for (size_t v = 0; v < fv; v++) {
           tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
 
-          if (idx.vertex_index >= 0) {
-            vx.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 0]);
-            vy.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 1]);
-            vz.push_back(attrib.vertices[3 * size_t(idx.vertex_index) + 2]);
-          }
+          assert(idx.vertex_index >= 0);
+          vis.push_back(std::int64_t(idx.vertex_index));
+
           if (idx.normal_index >= 0) {
             nx.push_back(attrib.normals[3 * size_t(idx.normal_index) + 0]);
             ny.push_back(attrib.normals[3 * size_t(idx.normal_index) + 1]);
@@ -343,6 +365,17 @@ static bool load_obj(struct futhark_context *futctx,
         index_offset += fv;
       }
     }
+  }
+
+  if (vis.size() > 0) {
+    struct futhark_i64_1d *vis_arr =
+        futhark_new_i64_1d(futctx, vis.data(), vis.size());
+
+    struct futhark_opaque_state *new_state = nullptr, *old_state = *futstate;
+    FUT_CHECK(futctx, futhark_entry_load_obj_vertex_indices(
+                          futctx, &new_state, index, vis_arr, old_state));
+    *futstate = new_state;
+    FUT_CHECK(futctx, futhark_free_i64_1d(futctx, vis_arr));
   }
 
   if (vx.size() > 0) {

@@ -45,6 +45,9 @@ entry input_file_names : []u8 = m.lys.input_file_names ()
 entry load_bin (i: i64) (content: []u8) (s: state): state =
   m.lys.load_bin i content s
 
+entry load_obj_vertex_indices (i: i64) (is: []i64) (s: state): state =
+  m.lys.load_obj_vertex_indices i is s
+
 entry load_obj_vertices (i: i64) (xs: []f32) (ys: []f32) (zs: []f32) (s: state): state =
   m.lys.load_obj_vertices i (zip3 xs ys zs) s
 

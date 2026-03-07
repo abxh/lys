@@ -104,6 +104,7 @@ module type lys = {
   -- of the filename is passed as a parameter starting from zero.
   val input_file_names : () -> string []
   val load_bin [n] : i64 -> [n]u8 -> state -> state
+  val load_obj_vertex_indices [n]: i64 -> [n]i64 -> state -> state
   val load_obj_vertices [n] : i64 -> [n](f32, f32, f32) -> state -> state
   val load_obj_normals [n] : i64 -> [n](f32, f32, f32) -> state -> state
   val load_obj_texcoords [n] : i64 -> [n](f32, f32) -> state -> state
@@ -129,6 +130,7 @@ module lys_no_text = {
 module lys_no_file = {
   def input_file_names () = ""
   def load_bin _ _ s = s
+  def load_obj_vertex_indices _ _ s = s
   def load_obj_vertices _ _ s = s
   def load_obj_normals _ _ s = s
   def load_obj_texcoords _ _ s = s

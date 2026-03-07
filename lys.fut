@@ -11,7 +11,8 @@ type~ lys_state =
   , radius: i64
   , paused: bool
   , msg_val: i64
-  , triangles: [](f32, f32, f32)
+  , vertices: [](f32, f32, f32)
+  , triangle_indices: []i64
   }
 
 module lys_text = {
@@ -41,7 +42,7 @@ module lys_text = {
        , s.w
        , s.h
        , s.msg_val
-       , length s.triangles / 3
+       , length s.triangle_indices / 3
        )
 
   def text_colour = const argb.yellow
@@ -64,10 +65,17 @@ module lys_file = {
     case _ ->
       s
 
+  def load_obj_vertex_indices [n] (i: i64) (is: [n]i64) (s: lys_state) : lys_state =
+    match i
+    case 1 ->
+      s with triangle_indices = is
+    case _ ->
+      s
+
   def load_obj_vertices [n] (i: i64) (vs: [n](f32, f32, f32)) (s: lys_state) : lys_state =
     match i
     case 1 ->
-      s with triangles = vs
+      s with vertices = vs
     case _ ->
       s
 
@@ -94,7 +102,8 @@ module lys : lys with text_content = lys_text.text_content = {
     , radius = 20
     , paused = false
     , msg_val = 0
-    , triangles = replicate 0 (0, 0, 0)
+    , vertices = replicate 0 (0, 0, 0)
+    , triangle_indices = replicate 0 (-1)
     }
 
   def resize (h: i64) (w: i64) (s: lys_state) =
@@ -157,7 +166,10 @@ module lys : lys with text_content = lys_text.text_content = {
       let ynew = x * s + y * c
       in (xnew, ynew)
     let in_banner (py: f32, px: f32): bool =
-      let (tx, ty) = s.triangles |> map (\(x0, x1, _) -> (x0, x1)) |> unzip
+      let (tx, ty) =
+        map (\i -> s.vertices[i]) s.triangle_indices
+        |> map (\(x0, x1, _) -> (x0, x1))
+        |> unzip
       let tavg = (reduce (+) 0 tx / f32.i64 (length tx), reduce (+) 0 ty / f32.i64 (length ty))
       let t = zip tx ty |> map \(tx, ty) -> (tx - tavg.0, ty - tavg.1)
       let tmin = ((unzip t).0 |> reduce f32.min f32.inf, (unzip t).1 |> reduce f32.min f32.inf)
