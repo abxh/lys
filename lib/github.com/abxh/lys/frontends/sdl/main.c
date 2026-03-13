@@ -125,7 +125,7 @@ void do_bench(struct futhark_context *fut, int height, int width, int n,
     do_render = true;
   }
 
-  start = lys_wall_time();
+  start = lys_time_us();
   for (int i = 0; i < n; i++) {
     if (do_step) {
       struct futhark_opaque_state *new_state;
@@ -140,7 +140,7 @@ void do_bench(struct futhark_context *fut, int height, int width, int n,
     }
   }
   futhark_context_sync(fut);
-  end = lys_wall_time();
+  end = lys_time_us();
 
   printf("Rendered %d frames in %fs (%f FPS)\n", n,
          ((double)end - start) / 1000000,

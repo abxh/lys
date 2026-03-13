@@ -3,15 +3,16 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <sys/time.h>
-
 #include "shared.h"
 
 #ifndef PROGNAME
 struct futhark_context_config *futhark_context_config_new();
 struct futhark_context *futhark_context_new(struct futhark_context_config *);
+void futhark_context_config_set_cache_file(struct futhark_context_config *,
+                                           const char *);
 struct futhark_u8_1d;
-const int64_t *futhark_shape_u8_1d(struct futhark_context *, struct futhark_u8_1d *);
+const int64_t *futhark_shape_u8_1d(struct futhark_context *,
+                                   struct futhark_u8_1d *);
 #endif
 
 void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
@@ -60,12 +61,6 @@ void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
 #else
   *opencl_device_name = NULL;
 #endif
-}
-
-int64_t lys_wall_time() {
-  struct timeval time;
-  assert(gettimeofday(&time, NULL) == 0);
-  return time.tv_sec * 1000000 + time.tv_usec;
 }
 
 void prepare_text(struct futhark_context *futctx, struct lys_text *text) {

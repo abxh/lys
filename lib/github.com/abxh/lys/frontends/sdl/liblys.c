@@ -169,10 +169,11 @@ sdl_loop(struct lys_context* ctx)
   struct futhark_u32_2d* out_arr;
 
   while (ctx->running) {
-    int64_t now = lys_wall_time();
+    int64_t now = lys_time_us();
     float delta = ((float)(now - ctx->last_time)) / 1000000.0;
     ctx->fps = (ctx->fps * 0.9 + (1 / delta) * 0.1);
     ctx->last_time = now;
+
     struct futhark_opaque_state *new_state, *old_state = ctx->state;
     FUT_CHECK(ctx->fut,
               futhark_entry_step(ctx->fut, &new_state, delta, old_state));
@@ -205,7 +206,7 @@ lys_run_sdl(struct lys_context* ctx)
 {
   struct futhark_context* fut = ctx->fut;
 
-  ctx->last_time = lys_wall_time();
+  ctx->last_time = lys_time_us();
 
   ctx->wnd = SDL_CreateWindow("Lys",
                               SDL_WINDOWPOS_UNDEFINED,

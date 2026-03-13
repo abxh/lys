@@ -222,7 +222,7 @@ void check_input(struct lys_context *ctx) {
 
 void lys_run_console(struct lys_context *ctx) {
   ctx->running = 1;
-  ctx->last_time = lys_wall_time();
+  ctx->last_time = lys_time_us();
 
   int num_frames = 0;
 
@@ -230,7 +230,7 @@ void lys_run_console(struct lys_context *ctx) {
 
   while (ctx->running && ctx->num_frames-- > 0) {
     num_frames++;
-    int64_t now = lys_wall_time();
+    int64_t now = lys_time_us();
     float delta;
     if (ctx->interactive) {
       delta = ((float)(now - ctx->last_time))/1000000.0;

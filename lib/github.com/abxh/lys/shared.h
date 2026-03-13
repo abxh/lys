@@ -9,8 +9,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
-#include <time.h>
 
 #ifdef PROGHEADER
 #include PROGHEADER
@@ -36,6 +34,7 @@ void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
                                struct futhark_context **futctx,
                                char **opencl_device_name);
 
+int64_t lys_time_us();
 int64_t lys_wall_time();
 
 #define FUT_CHECK(ctx, x) _fut_check(ctx, x, __FILE__, __LINE__)
