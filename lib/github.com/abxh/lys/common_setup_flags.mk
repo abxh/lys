@@ -28,10 +28,6 @@ else
 $(error Unknown LYS_FRONTEND: $(LYS_FRONTEND).  Must be 'sdl' or 'console')
 endif
 
-NOWARN_CFLAGS=-std=gnu11 -O
-
-CFLAGS?=$(NOWARN_CFLAGS) $(PKG_CFLAGS) -Wall -Wextra -pedantic
-
 ifeq ($(LYS_TTF),1)
 CFLAGS+= -DLYS_TTF
 endif
