@@ -16,6 +16,7 @@ endif
 CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic
 CXXFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
 
+NOWARN_CFLAGS ?= -O
 CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic
 CFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
 
@@ -33,7 +34,7 @@ all: $(PROGNAME)
 	futhark $(LYS_BACKEND) --library $<
 
 $(PROGNAME)_wrapper.o: $(PROGNAME)_wrapper.c $(PROGNAME)_wrapper.h
-	$(CC) -o $@ -c $< -w -fno-sanitize=all $(CFLAGS)
+	$(CC) -o $@ -c $< $(NOWARN_CFLAGS)
 
 # font generation snippet taken from commit:
 # https://github.com/dpaneda/lys/commit/f075c3e3c43e984a732beeb744faade68d0c8740

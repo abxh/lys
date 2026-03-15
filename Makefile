@@ -5,19 +5,21 @@ BUILD_DIR := build
 
 export PROGNAME
 
-CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic
-CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic
+CFLAGS ?= -std=gnu11 -Wall -Wextra -pedantic
+CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
+
+NOWARN_CFLAGS ?= -O
+CFLAGS += -O
+CXXFLAGS += -O
 
 # enable ubsan sanitizer. may comment below chunk out.
-CFLAGS += -fsanitize=undefined
-CXXFLAGS += -fsanitize=undefined
-LDFLAGS += -fsanitize=undefined
-
-export CFLAGS CXXFLAGS LDFLAGS
+# CFLAGS += -fsanitize=undefined
+# CXXFLAGS += -fsanitize=undefined
+# LDFLAGS += -fsanitize=undefined
 
 LYS_BACKEND := opencl
 
-export LYS_BACKEND
+export NOWARN_CFLAGS CFLAGS CXXFLAGS LDFLAGS LYS_BACKEND
 
 all: run
 
