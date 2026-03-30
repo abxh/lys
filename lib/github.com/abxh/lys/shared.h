@@ -59,8 +59,8 @@ void build_text(struct futhark_context *futctx,
 bool load_files(struct futhark_context *futctx,
                 struct futhark_opaque_state **futstate);
 
-#endif
-
 #ifdef __cplusplus
 }
+#endif
+
 #endif
