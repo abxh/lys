@@ -1,5 +1,6 @@
-#ifndef LIBLYS_HEADER
-#define LIBLYS_HEADER
+#pragma once
+
+#include "../../shared.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,11 +13,6 @@ extern "C" {
 #include <assert.h>
 #include <termios.h>
 
-#ifdef PROGHEADER
-#include PROGHEADER
-#endif
-
-#include "../../shared.h"
 
 enum lys_event {
   LYS_LOOP_START,
@@ -58,6 +54,4 @@ void draw_text(struct lys_context *ctx, char* buffer, int32_t colour,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -1,5 +1,12 @@
-#ifndef LIBLYS_SHARED
-#define LIBLYS_SHARED
+#pragma once
+
+#ifdef PROGHEADER
+#include PROGHEADER
+#else
+struct futhark_context_config;
+struct futhark_context;
+char *futhark_context_get_error(struct futhark_context *);
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,14 +16,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef PROGHEADER
-#include PROGHEADER
-#else
-struct futhark_context_config;
-struct futhark_context;
-char *futhark_context_get_error(struct futhark_context *);
-#endif
 
 struct lys_text {
   char *text_format;
@@ -61,6 +60,4 @@ bool load_files(struct futhark_context *futctx,
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

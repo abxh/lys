@@ -5,14 +5,17 @@ BUILD_DIR := build
 
 export PROGNAME
 
-CFLAGS ?= -std=gnu11 -Wall -Wextra -pedantic
-CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
+# CFLAGS ?= -std=gnu11 -Wall -Wextra -pedantic
+# CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
 
 NOWARN_CFLAGS ?= -O
 CFLAGS += -O
-CXXFLAGS += -O
+CXXFLAGS += -O 
 
-# enable ubsan sanitizer. may comment below chunk out.
+# NOWARN_CFLAGS += -I/opt/rocm/include -L/opt/rocm/lib
+# CFLAGS += -I/opt/rocm/include -L/opt/rocm/lib
+# CXXFLAGS += -I/opt/rocm/include -L/opt/rocm/lib
+
 # CFLAGS += -fsanitize=undefined
 # CXXFLAGS += -fsanitize=undefined
 # LDFLAGS += -fsanitize=undefined

@@ -1,5 +1,6 @@
-#ifndef LIBLYS_HEADER
-#define LIBLYS_HEADER
+#pragma once
+
+#include "../../shared.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,14 +13,6 @@ extern "C" {
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#ifdef PROGHEADER
-#include PROGHEADER
-#else
-struct futhark_context;
-struct futhark_opaque_state;
-#endif
-
-#include "../../shared.h"
 
 enum lys_event {
   LYS_LOOP_START,
@@ -71,6 +64,4 @@ void draw_text(struct lys_context *ctx, TTF_Font *font, int font_size, char* buf
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
