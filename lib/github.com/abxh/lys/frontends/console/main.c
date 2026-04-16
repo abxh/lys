@@ -5,10 +5,10 @@
 unsigned char font_data[] = {0};
 #endif
 
-#include <unistd.h>
+#include <errno.h>
 #include <getopt.h>
 #include <string.h>
-#include <errno.h>
+#include <unistd.h>
 
 bool show_text = true;
 
@@ -22,13 +22,12 @@ void loop_iteration(struct lys_context *ctx, struct lys_text *text) {
     return;
   }
 
-  build_text(ctx->fut, ctx->state, text->text_buffer, text->text_buffer_len, text->text_format,
-             ctx->fps, text->sum_names);
+  build_text(ctx->fut, ctx->state, text->text_buffer, text->text_buffer_len,
+             text->text_format, ctx->fps, text->sum_names);
   if (*(text->text_buffer) != '\0') {
     int32_t text_colour;
-    FUT_CHECK(ctx->fut,
-              futhark_entry_text_colour(ctx->fut, (uint32_t*) &text_colour,
-                                        ctx->state));
+    FUT_CHECK(ctx->fut, futhark_entry_text_colour(
+                            ctx->fut, (uint32_t *)&text_colour, ctx->state));
     draw_text(ctx, text->text_buffer, text_colour, 1, 1);
   }
 }
@@ -50,12 +49,10 @@ void loop_end(struct lys_text *text) {
   free(text->sum_names);
 }
 
-void f1(struct lys_text *text) {
-  text->show_text = !text->show_text;
-}
+void f1(struct lys_text *text) { text->show_text = !text->show_text; }
 
 void handle_event(struct lys_context *ctx, enum lys_event event) {
-  struct lys_text *text = (struct lys_text *) ctx->event_handler_data;
+  struct lys_text *text = (struct lys_text *)ctx->event_handler_data;
   switch (event) {
   case LYS_LOOP_START:
     loop_start(ctx, text);
@@ -86,17 +83,17 @@ void usage(char **argv) {
   puts("  -n FILE Render frames to FILE.");
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int max_fps = 60;
   char *deviceopt = NULL;
   bool device_interactive = false;
   FILE *output = NULL;
   int width = 74;
-  int height = 25*2;
+  int height = 25 * 2;
   int num_frames = -1;
 
   int c;
-  while ( (c = getopt(argc, argv, "r:Rtd:in:f:")) != -1) {
+  while ((c = getopt(argc, argv, "r:Rtd:in:f:")) != -1) {
     switch (c) {
     case 'r':
       max_fps = atoi(optarg);
@@ -143,7 +140,7 @@ int main(int argc, char** argv) {
 
   if (num_frames < 0) {
     if (output == NULL) {
-      num_frames = 1<<30;
+      num_frames = 1 << 30;
     } else {
       num_frames = max_fps;
     }
@@ -157,28 +154,32 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
 
-  void* buf = malloc(1024*1024);
-  setvbuf(stdout, buf, _IOFBF, 1024*1024);
+  void *buf = malloc(1024 * 1024);
+  setvbuf(stdout, buf, _IOFBF, 1024 * 1024);
 
   struct lys_context ctx;
   struct futhark_context_config *futcfg;
   lys_setup(&ctx, max_fps, num_frames, output, width, height);
 
-  char* opencl_device_name = NULL;
-  lys_setup_futhark_context(get_cache_path(argv[0]),
-                            deviceopt, device_interactive,
-                            &futcfg, &ctx.fut, &opencl_device_name);
-  if (opencl_device_name != NULL) {
-    free(opencl_device_name);
+  char *device_name = NULL;
+  lys_setup_futhark_context(get_cache_path(argv[0]), deviceopt,
+                            device_interactive, &futcfg, &ctx.fut,
+                            &device_name);
+  if (device_name != NULL) {
+    free(device_name);
   }
 
   struct lys_text text;
   ctx.event_handler_data = &text;
   ctx.event_handler = handle_event;
 
-  int32_t seed = (int32_t) lys_wall_time();
+  int32_t seed = (int32_t)lys_wall_time();
   futhark_entry_init(ctx.fut, &ctx.state, seed, ctx.height, ctx.width);
-  lys_run_console(&ctx);
+
+  bool has_loaded_files = load_files(ctx.fut, &ctx.state);
+  if (has_loaded_files) {
+    lys_run_console(&ctx);
+  }
 
   futhark_context_free(ctx.fut);
   futhark_context_config_free(futcfg);

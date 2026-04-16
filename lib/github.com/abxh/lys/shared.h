@@ -5,6 +5,7 @@
 #else
 struct futhark_context_config;
 struct futhark_context;
+struct futhark_opaque_state;
 char *futhark_context_get_error(struct futhark_context *);
 #endif
 
@@ -45,6 +46,12 @@ static inline void _fut_check(struct futhark_context *ctx, int res,
     exit(EXIT_FAILURE);
   }
 }
+
+void futhark_context_config_set_device_wrapper(
+    struct futhark_context_config *cfg, const char *s);
+
+void futhark_context_config_select_device_interactively_wrapper(
+    struct futhark_context_config *cfg);
 
 size_t n_printf_arguments();
 

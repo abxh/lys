@@ -241,14 +241,16 @@ int main(int argc, char **argv) {
   struct futhark_context_config *futcfg;
   lys_setup(&ctx, width, height, max_fps, sdl_flags);
 
-  char *opencl_device_name = NULL;
+  char *device_name = NULL;
   lys_setup_futhark_context(get_cache_path(argv[0]), deviceopt,
                             device_interactive, &futcfg, &ctx.fut,
-                            &opencl_device_name);
-  if (opencl_device_name != NULL) {
-    printf("Using OpenCL device: %s\n", opencl_device_name);
+                            &device_name);
+  if (device_name != NULL) {
+    printf("Using device: %s\n", device_name);
+#ifdef FUTHARK_BACKEND_opencl
     printf("Use -d or -i to change this.\n");
-    free(opencl_device_name);
+#endif
+    free(device_name);
   }
 
   FUT_CHECK(ctx.fut, futhark_entry_grab_mouse(ctx.fut, &ctx.grab_mouse));
@@ -268,8 +270,8 @@ int main(int argc, char **argv) {
   } else {
     int32_t seed = (int32_t)lys_wall_time();
     futhark_entry_init(ctx.fut, &ctx.state, seed, ctx.height, ctx.width);
-    bool has_loaded_files = load_files(ctx.fut, &ctx.state);
 
+    bool has_loaded_files = load_files(ctx.fut, &ctx.state);
     if (has_loaded_files) {
       lys_run_sdl(&ctx);
     }

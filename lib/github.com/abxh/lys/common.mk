@@ -22,19 +22,32 @@ CFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
 
 LDFLAGS += -lstdc++
 
-C_SOURCE_FILES := $(FRONTEND_DIR)/liblys.c $(SELF_DIR)/shared.c $(FRONTEND_DIR)/main.c 
-C_HEADER_FILES := $(FRONTEND_DIR)/liblys.h $(SELF_DIR)/shared.h $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.h
+C_SOURCE_FILES := \
+	$(FRONTEND_DIR)/liblys.c \
+	$(SELF_DIR)/shared.c \
+	$(FRONTEND_DIR)/main.c 
+C_HEADER_FILES := \
+	$(FRONTEND_DIR)/liblys.h \
+	$(SELF_DIR)/shared.h \
+	$(SELF_DIR)/utils/tiny_obj_loader/tiny_obj_loader.h
 
 all: $(PROGNAME)
 
-%_wrapper.fut: $(SELF_DIR)/lys_entry_gen.fut $(PROG_FUT_DEPS)
-	cat $< | sed 's/"lys"/"$(PROGNAME)"/' > $@
+%_wrapper.fut: \
+	$(SELF_DIR)/lys_entry_gen.fut \
+	$(PROG_FUT_DEPS)
+	cat $< \
+		| sed 's/"lys"/"$(PROGNAME)"/' \
+		> $@
 
 %.c %.h: %.fut
 	futhark $(LYS_BACKEND) --library $<
 
 $(PROGNAME)_wrapper.o: $(PROGNAME)_wrapper.c $(PROGNAME)_wrapper.h
-	$(CC) -o $@ -c $< $(NOWARN_CFLAGS)
+	$(CC) \
+		$(NOWARN_CFLAGS) \
+		-c $< \
+		-o $@
 
 # font generation snippet taken from commit:
 # https://github.com/dpaneda/lys/commit/f075c3e3c43e984a732beeb744faade68d0c8740
@@ -44,23 +57,47 @@ font_data.h: $(SELF_DIR)/Inconsolata-Regular.ttf
 		data = open(sys.argv[1], "rb").read(); \
 		print("unsigned char font_data[] = {"); \
 		print(",".join(f"0x{b:02x}" for b in data)); \
-		print("};")' $< > $@
+		print("};")' $< \
+		> $@
 
-tiny_obj_loader.o: $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.cpp $(PROGNAME)_wrapper.h
-	$(CXX) -I. -I$(SELF_DIR) -c $< -o $@ $(CXXFLAGS)
+tiny_obj_loader.o: \
+	$(SELF_DIR)/utils/tiny_obj_loader/tiny_obj_loader.cpp \
+	$(PROGNAME)_wrapper.h
+	$(CXX) \
+		$(CXXFLAGS) \
+		-I. -I$(SELF_DIR) \
+		-c $< \
+		-o $@
 
-shared_cpp.o: $(SELF_DIR)/shared.cpp $(PROGNAME)_wrapper.h $(SELF_DIR)/file_parsers/obj/tiny_obj_loader.h
-	$(CXX) -I. -I$(SELF_DIR) -c $< -o $@ $(CXXFLAGS)
+shared_cpp.o: \
+	$(SELF_DIR)/shared.cpp \
+	$(PROGNAME)_wrapper.h \
+	$(SELF_DIR)/utils/tiny_obj_loader/tiny_obj_loader.h
+	$(CXX) \
+		$(CXXFLAGS) \
+		-I. -I$(SELF_DIR) \
+		-c $< \
+		-o $@
 
 ifeq ($(shell test futhark.pkg -nt lib; echo $$?),0)
 $(PROGNAME):
 	futhark pkg sync
 	@$(MAKE) # The sync might have resulted in a new Makefile.
 else
-$(PROGNAME): $(PROGNAME)_wrapper.o shared_cpp.o tiny_obj_loader.o $(FONT_DEPS) $(C_SOURCE_FILES) $(C_HEADER_FILES)
-	$(CC) $(PROGNAME)_wrapper.o shared_cpp.o tiny_obj_loader.o \
+$(PROGNAME): \
+	$(PROGNAME)_wrapper.o \
+	tiny_obj_loader.o \
+	shared_cpp.o \
+	$(FONT_DEPS) \
+	$(C_SOURCE_FILES) \
+	$(C_HEADER_FILES)
+	$(CC) \
+		$(CFLAGS) \
+		$(LDFLAGS) \
+		$(PROGNAME)_wrapper.o tiny_obj_loader.o shared_cpp.o \
 		$(C_SOURCE_FILES) \
-		-I. -I$(SELF_DIR) -o $@ $(CFLAGS) $(LDFLAGS)
+		-I. -I$(SELF_DIR) \
+		-o $@
 endif
 
 run: $(PROGNAME)

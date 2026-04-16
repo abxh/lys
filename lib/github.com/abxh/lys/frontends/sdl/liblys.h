@@ -6,13 +6,13 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <assert.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 enum lys_event {
   LYS_LOOP_START,
@@ -38,8 +38,8 @@ struct lys_context {
   float fps;
   int max_fps;
   int sdl_flags;
-  void* event_handler_data;
-  void (*event_handler)(struct lys_context*, enum lys_event);
+  void *event_handler_data;
+  void (*event_handler)(struct lys_context *, enum lys_event);
   TTF_Font *font;
   int font_size;
 };
@@ -47,19 +47,20 @@ struct lys_context {
 #define SDL_ASSERT(x) _sdl_assert(x, __FILE__, __LINE__)
 static inline void _sdl_assert(int res, const char *file, int line) {
   if (res == 0) {
-    fprintf(stderr, "%s:%d: SDL error %d: %s\n",
-            file, line, res, SDL_GetError());
+    fprintf(stderr, "%s:%d: SDL error %d: %s\n", file, line, res,
+            SDL_GetError());
     exit(EXIT_FAILURE);
   }
 }
 
-void lys_setup(struct lys_context *ctx, int width, int height, int max_fps, int sdl_flags);
+void lys_setup(struct lys_context *ctx, int width, int height, int max_fps,
+               int sdl_flags);
 
 void lys_run_sdl(struct lys_context *ctx);
 
 #ifdef LYS_TTF
-void draw_text(struct lys_context *ctx, TTF_Font *font, int font_size, char* buffer, int32_t colour,
-               int x_start, int y_start);
+void draw_text(struct lys_context *ctx, TTF_Font *font, int font_size,
+               char *buffer, int32_t colour, int x_start, int y_start);
 #endif
 
 #ifdef __cplusplus

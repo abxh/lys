@@ -1,6 +1,8 @@
 
 
+#include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "shared.h"
@@ -15,16 +17,69 @@ const int64_t *futhark_shape_u8_1d(struct futhark_context *,
                                    struct futhark_u8_1d *);
 #endif
 
+char *get_gpu_device_name(struct futhark_context *ctx) {
+#if defined(FUTHARK_BACKEND_opencl)
+
+  cl_device_id device;
+  assert(clGetCommandQueueInfo(futhark_context_get_command_queue(ctx),
+                               CL_QUEUE_DEVICE, sizeof(cl_device_id), &device,
+                               NULL) == CL_SUCCESS);
+
+  size_t name_size;
+  assert(clGetDeviceInfo(device, CL_DEVICE_NAME, 0, NULL, &name_size) ==
+         CL_SUCCESS);
+
+  char *name = malloc(name_size);
+  assert(clGetDeviceInfo(device, CL_DEVICE_NAME, name_size, name, NULL) ==
+         CL_SUCCESS);
+
+  return name;
+
+#elif defined(FUTHARK_BACKEND_cuda)
+
+  int device;
+  assert(cudaGetDevice(&device) == cudaSuccess);
+
+  cudaDeviceProp props;
+  assert(cudaGetDeviceProperties(&props, device) == cudaSuccess);
+
+  char *name = malloc(strlen(props.name) + 1);
+  strcpy(name, props.name);
+
+  return name;
+
+#elif defined(FUTHARK_BACKEND_hip)
+
+  int device;
+  assert(hipGetDevice(&device) == hipSuccess);
+
+  hipDeviceProp_t props;
+  assert(hipGetDeviceProperties(&props, device) == hipSuccess);
+
+  char *name = malloc(strlen(props.name) + 1);
+  strcpy(name, props.name);
+
+  return name;
+
+#else
+
+  (void)ctx;
+  return NULL;
+
+#endif
+}
+
 void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
                                _Bool device_interactive,
                                struct futhark_context_config **futcfg,
                                struct futhark_context **futctx,
-                               char **opencl_device_name) {
+                               char **device_name) {
   *futcfg = futhark_context_config_new();
   assert(*futcfg != NULL);
 
-#if defined(FUTHARK_BACKEND_opencl) || defined(FUTHARK_BACKEND_cuda)
-  if (deviceopt != NULL) {
+#if defined(FUTHARK_BACKEND_opencl) || defined(FUTHARK_BACKEND_cuda) ||        \
+    defined(FUTHARK_BACKEND_hip)
+  if (deviceopt) {
     futhark_context_config_set_device(*futcfg, deviceopt);
   }
 #else
@@ -39,28 +94,14 @@ void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
   (void)device_interactive;
 #endif
 
-  if (cache_path != NULL) {
+  if (cache_path) {
     futhark_context_config_set_cache_file(*futcfg, cache_path);
   }
 
   *futctx = futhark_context_new(*futcfg);
   assert(*futctx != NULL);
 
-#ifdef FUTHARK_BACKEND_opencl
-  cl_device_id device;
-  assert(clGetCommandQueueInfo(futhark_context_get_command_queue(*futctx),
-                               CL_QUEUE_DEVICE, sizeof(cl_device_id), &device,
-                               NULL) == CL_SUCCESS);
-
-  size_t dev_name_size;
-  assert(clGetDeviceInfo(device, CL_DEVICE_NAME, 0, NULL, &dev_name_size) ==
-         CL_SUCCESS);
-  *opencl_device_name = malloc(dev_name_size);
-  assert(clGetDeviceInfo(device, CL_DEVICE_NAME, dev_name_size,
-                         *opencl_device_name, NULL) == CL_SUCCESS);
-#else
-  *opencl_device_name = NULL;
-#endif
+  *device_name = get_gpu_device_name(*futctx);
 }
 
 void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
@@ -86,6 +127,13 @@ void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
     if (text->text_format[i] == '%' && i + 1 < text_format_len &&
         text->text_format[i + 1] != '%') {
       i_arg++;
+      if (i_arg >= n_printf_arguments()) {
+        fprintf(stderr,
+                "number of parameters between futhark function and format "
+                "string do not match!\n");
+        abort();
+      }
+
       if (text->text_format[i + 1] == '[') {
         text->text_format[i + 1] = 's';
         size_t end_pos;

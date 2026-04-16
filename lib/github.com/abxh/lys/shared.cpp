@@ -10,13 +10,14 @@
 #include <iostream>
 #include <utility>
 
-#include "file_parsers/obj/tiny_obj_loader.h"
 #include "shared.h"
+#include "utils/tiny_obj_loader/tiny_obj_loader.h"
 
 #ifdef PROGHEADER
 #include PROGHEADER
 #else
 #error "undefined PROGHEADER"
+struct futhark_context_config;
 int futhark_entry_text_content(struct futhark_context *, const float,
                                const struct futhark_opaque_state *);
 #endif
