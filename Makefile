@@ -1,4 +1,4 @@
-.PHONY: all run clean prepare
+.PHONY: all run build prepare clean
 
 PROGNAME := lys
 BUILD_DIR := build
@@ -25,9 +25,14 @@ LYS_FRONTEND := sdl
 
 export NOWARN_CFLAGS CFLAGS CXXFLAGS LDFLAGS LYS_BACKEND LYS_FRONTEND
 
-all: run
+all: build
 
 run: build
+	$(MAKE) run \
+		-C $(BUILD_DIR) \
+		-f ../lib/github.com/abxh/lys/common.mk
+
+build: prepare
 	$(MAKE) \
 		-C $(BUILD_DIR) \
 		-f ../lib/github.com/abxh/lys/common.mk
@@ -37,7 +42,7 @@ clean:
 		-C $(BUILD_DIR) \
 		-f ../lib/github.com/abxh/lys/common.mk
 
-build: build/
+prepare: 
 	@mkdir -p $(BUILD_DIR)
 	@for f in *.fut *.bin *.obj; do \
 		ln -sf "../$$f" "$(BUILD_DIR)/$$f"; \

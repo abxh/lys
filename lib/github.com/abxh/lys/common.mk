@@ -103,6 +103,8 @@ endif
 run: $(PROGNAME)
 	./$(PROGNAME)
 
+.INTERMEDIATE: $(PROGNAME)_wrapper.o tiny_obj_loader.o shared_cpp.o
+
 clean:
 	rm -f $(PROGNAME) $(PROGNAME).c $(PROGNAME).h \
 	      $(PROGNAME)_wrapper.* *.o font_data.h

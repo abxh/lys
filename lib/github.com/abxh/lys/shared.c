@@ -127,13 +127,6 @@ void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
     if (text->text_format[i] == '%' && i + 1 < text_format_len &&
         text->text_format[i + 1] != '%') {
       i_arg++;
-      if (i_arg >= n_printf_arguments()) {
-        fprintf(stderr,
-                "number of parameters between futhark function and format "
-                "string do not match!\n");
-        abort();
-      }
-
       if (text->text_format[i + 1] == '[') {
         text->text_format[i + 1] = 's';
         size_t end_pos;
@@ -185,6 +178,12 @@ void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
         text->text_buffer_len += 20; // estimate
       }
     }
+  }
+
+  if ((i_arg + 1) != n_printf_arguments()) {
+    fprintf(stderr, "mismatch between the tuple arity of `text_content` and "
+                    "number of parameters to format string!\n");
+    abort();
   }
 
   text->text_buffer = malloc(sizeof(char) * text->text_buffer_len);
