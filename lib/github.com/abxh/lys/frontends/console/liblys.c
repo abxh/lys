@@ -149,52 +149,64 @@ void cursor_goto(int x, int y) { printf("\033[%d;%dH", y + 1, x + 1); }
 
 void cursor_home() { printf("\033[;H"); }
 
+inline int lum(int r, int g, int b) { return (77 * r + 150 * g + 29 * b) >> 8; }
+
 void render(int nrows, int ncols, const uint32_t *rgbs, uint32_t *fgs,
             uint32_t *bgs, char *chars) {
+
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < ncols; j++) {
-      uint32_t w0 = rgbs[(i * 2) * ncols + j];
-      uint32_t w1 = rgbs[(i * 2 + 1) * ncols + j];
-      fgs[i * ncols + j] = w0;
-      bgs[i * ncols + j] = w1;
-      chars[i * ncols + j] = 127; // Sentinel.
+
+      int x = j;
+      int y = i * 2;
+
+      uint32_t p0 = rgbs[y * ncols + x];
+      uint32_t p1 = rgbs[y * ncols + (x + 1 < ncols ? x + 1 : x)];
+      uint32_t p2 = rgbs[(y + 1) * ncols + x];
+      uint32_t p3 = rgbs[(y + 1) * ncols + (x + 1 < ncols ? x + 1 : x)];
+
+      uint32_t top = p0;
+      uint32_t bot = p2;
+
+      int lt0 = lum((p0 >> 16) & 0xFF, (p0 >> 8) & 0xFF, p0 & 0xFF);
+      int lt1 = lum((p1 >> 16) & 0xFF, (p1 >> 8) & 0xFF, p1 & 0xFF);
+
+      int lb0 = lum((p2 >> 16) & 0xFF, (p2 >> 8) & 0xFF, p2 & 0xFF);
+      int lb1 = lum((p3 >> 16) & 0xFF, (p3 >> 8) & 0xFF, p3 & 0xFF);
+
+      if (lt1 > lt0)
+        top = p1;
+      if (lb1 > lb0)
+        bot = p3;
+
+      fgs[i * ncols + j] = top;
+      bgs[i * ncols + j] = bot;
+      chars[i * ncols + j] = 127;
     }
   }
 }
 
 void display(FILE *f, bool eol, int nrows, int ncols, const uint32_t *fgs,
              const uint32_t *bgs, const char *chars) {
-  uint32_t prev_w0 = 0xdeadbeef;
-  uint32_t prev_w1 = 0xdeadbeef;
+  uint32_t prev_fg = 0xffffffff, prev_bg = 0xffffffff;
   for (int i = 0; i < nrows; i++) {
     for (int j = 0; j < ncols; j++) {
-      double r0 = 0, g0 = 0, b0 = 0;
-      double r1 = 0, g1 = 0, b1 = 0;
-      uint32_t w0 = fgs[i * ncols + j];
-      uint32_t w1 = bgs[i * ncols + j];
-      if (w0 != prev_w0 || w1 != prev_w1) {
-        r0 = (w0 >> 16) & 0xFF;
-        g0 = (w0 >> 8) & 0xFF;
-        b0 = (w0 >> 0) & 0xFF;
-        r1 = (w1 >> 16) & 0xFF;
-        g1 = (w1 >> 8) & 0xFF;
-        b1 = (w1 >> 0) & 0xFF;
-        fg_rgb(f, r0, g0, b0);
-        bg_rgb(f, r1, g1, b1);
-        prev_w0 = w0;
-        prev_w1 = w1;
+      uint32_t fg = fgs[i * ncols + j], bg = bgs[i * ncols + j];
+      if (fg != prev_fg || bg != prev_bg) {
+        fg_rgb(f, (fg >> 16) & 0xFF, (fg >> 8) & 0xFF, fg & 0xFF);
+        bg_rgb(f, (bg >> 16) & 0xFF, (bg >> 8) & 0xFF, bg & 0xFF);
+        prev_fg = fg;
+        prev_bg = bg;
       }
       char c = chars[i * ncols + j];
       if (c == 127) {
-        fputs("▀", f);
-      } else {
+        fprintf(f, "▀");
+      } else
         fputc(c, f);
-      }
-    }
-    if (eol) {
-      fputc('\n', f);
     }
   }
+  if (eol)
+    fputc('\n', f);
 }
 
 void keydown(struct lys_context *ctx, int keysym) {
