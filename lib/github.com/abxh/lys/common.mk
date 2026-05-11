@@ -14,11 +14,11 @@ FONT_DEPS :=
 endif
 
 CXXFLAGS ?= -std=c++17 -O -Wall -Wextra -pedantic
-CXXFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
+CXXFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"' -DPRINTFHEADER='"$(PROGNAME)_printf.h"'
 
 NOWARN_CFLAGS ?= -O
 CFLAGS ?= -std=gnu11 -O -Wall -Wextra -pedantic
-CFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"'
+CFLAGS += -DPROGHEADER='"$(PROGNAME)_wrapper.h"' -DPRINTFHEADER='"$(PROGNAME)_printf.h"'
 
 LDFLAGS += -lstdc++
 
@@ -48,6 +48,9 @@ $(PROGNAME)_wrapper.o: $(PROGNAME)_wrapper.c $(PROGNAME)_wrapper.h
 		$(NOWARN_CFLAGS) \
 		-c $< \
 		-o $@
+
+$(PROGNAME)_printf.h: $(PROGNAME)_wrapper.json
+	python3 $(SELF_DIR)/gen_printf.py $(FRONTEND_DIR) $@ $<
 
 # font generation snippet taken from commit:
 # https://github.com/dpaneda/lys/commit/f075c3e3c43e984a732beeb744faade68d0c8740
@@ -86,6 +89,7 @@ $(PROGNAME):
 else
 $(PROGNAME): \
 	$(PROGNAME)_wrapper.o \
+	$(PROGNAME)_printf.h \
 	tiny_obj_loader.o \
 	shared_cpp.o \
 	$(FONT_DEPS) \
@@ -106,5 +110,5 @@ run: $(PROGNAME)
 .INTERMEDIATE: $(PROGNAME)_wrapper.o tiny_obj_loader.o shared_cpp.o
 
 clean:
-	rm -f $(PROGNAME) $(PROGNAME).c $(PROGNAME).h \
+	rm -f $(PROGNAME) $(PROGNAME).c $(PROGNAME).h $(PROGNAME)_printf.h \
 	      $(PROGNAME)_wrapper.* *.o font_data.h

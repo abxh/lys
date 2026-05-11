@@ -5,6 +5,10 @@
 unsigned char font_data[] = {0};
 #endif
 
+#ifdef PRINTFHEADER
+#include PRINTFHEADER
+#endif
+
 #include <errno.h>
 #include <getopt.h>
 #include <string.h>
@@ -22,8 +26,9 @@ void loop_iteration(struct lys_context *ctx, struct lys_text *text) {
     return;
   }
 
-  build_text(ctx->fut, ctx->state, text->text_buffer, text->text_buffer_len,
-             text->text_format, ctx->fps, text->sum_names);
+  build_text(ctx, text->text_buffer, text->text_buffer_len, text->text_format,
+             ctx->fps, text->sum_names);
+
   if (*(text->text_buffer) != '\0') {
     int32_t text_colour;
     FUT_CHECK(ctx->fut, futhark_entry_text_colour(

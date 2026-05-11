@@ -1,4 +1,3 @@
-#include <array>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -8,52 +7,9 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <utility>
 
 #include "shared.h"
 #include "utils/tiny_obj_loader/tiny_obj_loader.h"
-
-#ifdef PROGHEADER
-#include PROGHEADER
-#else
-#error "undefined PROGHEADER"
-struct futhark_context_config;
-int futhark_entry_text_content(struct futhark_context *, const float,
-                               const struct futhark_opaque_state *);
-#endif
-
-namespace detail {
-
-using printf_out_t = union {
-  std::int64_t val;
-  char *sum_name;
-};
-
-template <std::size_t... i, std::size_t N = sizeof...(i)>
-static void build_text(struct futhark_context *futctx,
-                       struct futhark_opaque_state *futstate, char *dest,
-                       size_t dest_len, const char *format, float fps,
-                       char ***sum_names, std::array<printf_out_t, N> out,
-                       const std::index_sequence<i...> &) {
-  FUT_CHECK(futctx,
-            futhark_entry_text_content(futctx, &out[i].val..., fps, futstate));
-
-  ((sum_names[i] != NULL ? out[i].sum_name = sum_names[i][(int32_t)out[i].val]
-                         : (char *)0),
-   ...);
-
-  std::snprintf(dest, dest_len, format, out[i].val...);
-}
-
-template <typename T> struct function_arity;
-template <typename Ret, typename... Args>
-struct function_arity<Ret (*)(Args...)>
-    : std::integral_constant<std::size_t, sizeof...(Args)> {};
-static constexpr size_t n_printf_arguments() {
-  return function_arity<decltype(&futhark_entry_text_content)>::value - 3;
-}
-
-}; // namespace detail
 
 extern "C" int64_t lys_wall_time() {
   using namespace std::chrono;
@@ -65,18 +21,6 @@ extern "C" int64_t lys_time_us() {
   using namespace std::chrono;
   return duration_cast<microseconds>(steady_clock::now().time_since_epoch())
       .count();
-}
-
-extern "C" size_t n_printf_arguments() { return detail::n_printf_arguments(); }
-
-extern "C" void build_text(struct futhark_context *futctx,
-                           struct futhark_opaque_state *futstate, char *dest,
-                           size_t dest_len, const char *format, float fps,
-                           char ***sum_names) {
-  constexpr auto N = detail::n_printf_arguments();
-  std::array<detail::printf_out_t, N> out;
-  detail::build_text(futctx, futstate, dest, dest_len, format, fps, sum_names,
-                     out, std::make_index_sequence<N>{});
 }
 
 extern "C" const char *get_cache_path(const char *progname) {

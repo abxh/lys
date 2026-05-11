@@ -104,6 +104,8 @@ void lys_setup_futhark_context(const char *cache_path, const char *deviceopt,
   *device_name = get_gpu_device_name(*futctx);
 }
 
+extern size_t n_printf_arguments();
+
 void prepare_text(struct futhark_context *futctx, struct lys_text *text) {
   struct futhark_u8_1d *text_format_array;
   FUT_CHECK(futctx, futhark_entry_text_format(futctx, &text_format_array));

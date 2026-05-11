@@ -53,17 +53,17 @@ void futhark_context_config_set_device_wrapper(
 void futhark_context_config_select_device_interactively_wrapper(
     struct futhark_context_config *cfg);
 
-size_t n_printf_arguments();
-
 void prepare_text(struct futhark_context *futctx, struct lys_text *text);
-
-void build_text(struct futhark_context *futctx,
-                struct futhark_opaque_state *futstate, char *dest,
-                size_t dest_len, const char *format, float fps,
-                char ***sum_names);
 
 bool load_files(struct futhark_context *futctx,
                 struct futhark_opaque_state **futstate);
+
+#ifndef PRINTFHEADER
+struct lys_context;
+size_t n_printf_arguments();
+void build_text(const struct lys_context *ctx, char *dest, size_t dest_len,
+                const char *format, float fps, char ***sum_names);
+#endif
 
 #ifdef __cplusplus
 }
