@@ -40,7 +40,7 @@ all: $(PROGNAME)
 		| sed 's/"lys"/"$(PROGNAME)"/' \
 		> $@
 
-%.c %.h: %.fut
+%.c %.h %.json: %.fut
 	futhark $(LYS_BACKEND) --library $<
 
 $(PROGNAME)_wrapper.o: $(PROGNAME)_wrapper.c $(PROGNAME)_wrapper.h
