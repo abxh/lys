@@ -251,7 +251,7 @@ static bool load_obj(struct futhark_context *futctx,
 
   {
     tinyobj::ObjReaderConfig reader_config;
-    reader_config.mtl_search_path = "./"; // Path to material files
+    reader_config.mtl_search_path = path.parent_path().string(); // Path to material files
 
     tinyobj::ObjReader reader;
     if (!reader.ParseFromFile(path, reader_config)) {
