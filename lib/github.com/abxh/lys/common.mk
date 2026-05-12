@@ -108,6 +108,7 @@ run: $(PROGNAME)
 	./$(PROGNAME)
 
 .INTERMEDIATE: $(PROGNAME)_wrapper.o tiny_obj_loader.o shared_cpp.o
+.SECONDARY: $(PROGNAME)_wrapper.fut
 
 clean:
 	rm -f $(PROGNAME) $(PROGNAME).c $(PROGNAME).h $(PROGNAME)_printf.h \
