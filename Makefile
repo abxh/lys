@@ -16,11 +16,15 @@ CXXFLAGS += -O
 # CFLAGS += -I/opt/rocm/include -L/opt/rocm/lib
 # CXXFLAGS += -I/opt/rocm/include -L/opt/rocm/lib
 
+# NOWARN_CFLAGS += -I/opt/cuda/include -L/opt/cuda/lib64
+# CFLAGS += -I/opt/cuda/include -L/opt/cuda/lib64
+# CXXFLAGS += -I/opt/cuda/include -L/opt/cuda/lib64
+
 # CFLAGS += -fsanitize=undefined
 # CXXFLAGS += -fsanitize=undefined
 # LDFLAGS += -fsanitize=undefined
 
-LYS_BACKEND := opencl
+LYS_BACKEND := multicore
 LYS_FRONTEND := sdl
 
 export NOWARN_CFLAGS CFLAGS CXXFLAGS LDFLAGS LYS_BACKEND LYS_FRONTEND

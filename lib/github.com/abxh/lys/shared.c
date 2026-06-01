@@ -40,7 +40,7 @@ char *get_gpu_device_name(struct futhark_context *ctx) {
   int device;
   assert(cudaGetDevice(&device) == cudaSuccess);
 
-  cudaDeviceProp props;
+  struct cudaDeviceProp props;
   assert(cudaGetDeviceProperties(&props, device) == cudaSuccess);
 
   char *name = malloc(strlen(props.name) + 1);
